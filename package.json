@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@grammyjs/chat-members": "^1.0.10",
+    "dotenv": "^16.3.1",
+    "grammy": "^1.17.2",
+    "mongoose": "^7.4.2"
+  }
+}
