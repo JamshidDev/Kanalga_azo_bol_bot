@@ -1,33 +1,46 @@
-const {Group} = require("../models/groupModels");
+const { Group } = require("../models/groupModels");
+
+const customLogger = require("../config/customLogger")
 
 
-const  registerGroup =  async (data, ctx)=>{
-    try{
-        const  {group_id, group_name, group_username, connective_user_id, active_group } = data;
+const registerGroup = async (data, ctx) => {
+    try {
+        const { group_id } = data;
 
-        let exist_group = await Group.find({group_id});
+        let exist_group = await Group.findOne({ group_id }).exec();
 
-        if(exist_group.length){
-            let group = await Group.create({
-                group_id,
-                group_name,
-                group_username,
-                connective_user_id,
-                active_group
-            })
-
-            console.log(group);
-
-        }else{
-            console.log("This group is exist already...");
+        if (!exist_group) {
+            await Group.create(data)
+        } else {
+            let _id = exist_group._id;
+            await Group.findByIdAndUpdate(_id, data);
         }
-
-
-    }catch(error){
-        console.log("Group register error ---> \n" +error);
+    } catch (error) {
+        customLogger.log({
+            level: 'error',
+            message: error
+        });
     }
-   
+
 
 }
 
-module.exports = {registerGroup}
+const removeGroup = async (data, ctx) => {
+    try {
+        const { group_id } = data;
+        let exist_group = await Group.findOne({ group_id }).exec();
+        if (exist_group) {
+            let _id = exist_group._id;
+            await Group.findOneAndRemove(_id);
+        } else {
+            console.log("Groupt not found for deleteing --->")
+        }
+    } catch (error) {
+        customLogger.log({
+            level: 'error',
+            message: error
+        });
+    }
+}
+
+module.exports = { registerGroup, removeGroup }

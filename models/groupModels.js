@@ -11,7 +11,6 @@ const groupSchema = mongoose.Schema({
     connective_user_id:{
         type:Number,
         required:true,
-        unique:true,
     },
     active_group:{
         type:Boolean,
