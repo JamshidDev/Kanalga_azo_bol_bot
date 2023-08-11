@@ -1,5 +1,6 @@
 const { Channel } = require("../models/channelModels");
 const customLogger = require("../config/customLogger");
+const {Relation} = require("../models/relationChannelGroup");
 
 const registerChannel = async (data, ctx) => {
     try {
@@ -35,6 +36,8 @@ const removeChannel = async (data, ctx) => {
         } else {
             console.log("Channel not found for deleteing --->")
         }
+
+        await Relation.deleteMany({channel_id });
     } catch (error) {
         customLogger.log({
             level: 'error',

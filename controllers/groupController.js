@@ -1,4 +1,5 @@
 const { Group } = require("../models/groupModels");
+const {Relation} = require("../models/relationChannelGroup");
 
 const customLogger = require("../config/customLogger")
 
@@ -35,6 +36,9 @@ const removeGroup = async (data, ctx) => {
         } else {
             console.log("Groupt not found for deleteing --->")
         }
+        await Relation.deleteMany({group_id });
+
+        
     } catch (error) {
         customLogger.log({
             level: 'error',

@@ -15,8 +15,9 @@ const { registerGroup, removeGroup } = require("./controllers/groupController");
 const { registerChannel, removeChannel } = require("./controllers/channelController");
 const { registerUser, removeUser } = require("./controllers/userController");
 
-const { myGroupList, searchChannel } = require("./controllers/privateController");
+const { myGroupList, searchChannel, relationGroupChannel, getRelationList } = require("./controllers/privateController");
 const { Menu } = require("@grammyjs/menu");
+const { log } = require("winston");
 
 
 const adapter = new MemorySessionStorage();
@@ -42,6 +43,7 @@ bot.use(session({
                 user_id: null,
                 my_group_list: [],
                 selected_group: null,
+                channel_list :[],
 
             }
         },
@@ -72,8 +74,26 @@ async function channelUsernameConversation(conversation, ctx) {
             let channel = resultChannel[0]._id;
             let group = selected_group._id;
             let creator = ctx.from.id;
+            let group_id = selected_group.group_id;
+            let channel_id = resultChannel[0].channel_id;
+
+            let data = {
+                channel,
+                group,
+                creator,
+                group_id,
+                channel_id
+            }
+            let status_action = await relationGroupChannel(data, ctx);
+            if (status_action) {
+                ctx.reply("✅ Kanal muvofaqiyatli gruppaga ulandi. ")
+            } else {
+                ctx.reply("⚠️ Kanal ulashda kutilmagan xatolik yuz berdi...")
+            }
         } else {
-            ctx.reply("⚠️ Kutilmagan xatolik! \n <i>Qayta urning iltimos!</i>")
+            ctx.reply("⚠️ Kutilmagan xatolik! \n <i>Qayta urning iltimos!</i>", {
+                parse_mode: "HTML"
+            })
         }
     } else {
         ctx.reply(`⚠️ <b>Kanal topilmadi</b> \n\n<i>👮‍♂️ Siz izlayotgan kanalga bot adminstator qilinmagan yoki noto'g'ri kanal usernamini kiritdingiz. Iltimos tekshirip qayta haratkat qiling!</i>`, {
@@ -199,6 +219,7 @@ bot.on("my_chat_member", async (ctx) => {
 
 
 const pm = bot.chatType("private");
+const superGroupChat = bot.chatType("supergroup")
 
 
 
@@ -207,7 +228,6 @@ const main_menu = new Keyboard()
     .text("📊 Kanallar")
     .persistent()
     .resized();
-
 
 pm.command("start", (ctx) => {
     try {
@@ -223,14 +243,13 @@ pm.command("start", (ctx) => {
     }
 })
 
-
-
-
-
-
-
-
 const add_channel_btn_menu = new Menu("add_channel_btn_menu")
+    .text("🔁 Ulangan kanallar", async (ctx) => {
+        ctx.answerCallbackQuery();
+        ctx.deleteMessage()
+        ctx.reply("Mening kanallarim ro'yhati")
+    })
+    .row()
     .text("➕ Kanal ulash", async (ctx) => {
         ctx.answerCallbackQuery();
         ctx.deleteMessage()
@@ -290,6 +309,53 @@ pm.hears("👥 Mening guruhlarim", async (ctx) => {
         });
     }
 })
+
+
+
+let channel_btn_list_menu = new Menu("channel_btn_list_menu");
+channel_btn_list_menu.dynamic(async (ctx, range) => {
+    let btn_list_channel = await ctx.session.session_db.channel_list
+    btn_list_channel.forEach((item) => {
+        range
+        .url(item.channel_name, `https://t.me/${item.channel_username}`).row()
+    });
+});
+superGroupChat.use(channel_btn_list_menu);
+
+superGroupChat.on("message", async (ctx) => {
+
+    let permission_list = ['member', 'adminstator', 'creator',]
+    let group_id = ctx.message.chat.id;
+    let user_id = ctx.from.id;
+
+    let group_list = await getRelationList(group_id);
+    if (group_list.length > 0) {
+        let btn_list = [];
+        for (const item of group_list) {
+            let chatMembers = await ctx.chatMembers.getChatMember(item.channel.channel_id, user_id);
+            if (!permission_list.includes(chatMembers.status)) {
+                btn_list.push({
+                    channel_name: item.channel.channel_name,
+                    channel_username: item.channel.channel_username,
+                    channel_id: item.channel.channel_id
+                })
+            }
+        };
+        if(!btn_list.length==0){
+            await ctx.deleteMessage();
+            ctx.session.session_db.channel_list = btn_list;
+            await ctx.reply(`👮‍♂️ Salom  <a href="tg://user?id=${ctx.from.id}">${ctx.from.first_name}</a> . Guruhga yozish uchun quyidagi kanallarga a'zo bo'lishingiz shart. \n 👇👇👇👇👇👇👇👇👇 `,{
+                reply_markup:channel_btn_list_menu,
+                parse_mode:"HTML"
+            })
+        }
+        
+    }
+
+
+
+})
+
 
 
 

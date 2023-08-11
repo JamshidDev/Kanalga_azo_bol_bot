@@ -13,6 +13,14 @@ const relationChannelGroupSchema = mongoose.Schema({
         type:Number,
         required:true,
     },
+    group_id:{
+        type:Number,
+        required:true,
+    },
+    channel_id:{
+        type:Number,
+        required:true,
+    },
     active_relation:{
         type:Boolean,
         default:true
@@ -21,5 +29,5 @@ const relationChannelGroupSchema = mongoose.Schema({
 })
 
 
-const relationChannelGroup = mongoose.model('RelationChannelGroup', relationChannelGroupSchema);
-
+const Relation = mongoose.model('Relation', relationChannelGroupSchema);
+module.exports = {Relation}
