@@ -45,6 +45,7 @@ bot.use(session({
                 selected_group: null,
                 channel_list: [],
                 group_channel_list: [],
+                my_channels_list:[],
             }
         },
         storage: new MemorySessionStorage()
@@ -112,22 +113,22 @@ async function channelUsernameConversation(conversation, ctx) {
 
 // General function
 const history_msg_template = async (ctx, msg_status, msg) => {
-    // let message = `${msg_status == 'success' ? '✅ ' : '⚠️ '} <b>NOTEFICATION</b> \n\n`
-    //     + "🕹  <b>Action type</b>: " + ctx.update.my_chat_member.chat.type
-    //     + "\n📑 <b>Name</b>: " + `<a href='https://t.me/${ctx.update.my_chat_member.chat.username}' >${ctx.update.my_chat_member.chat.title}</a>`
-    //     + "\n🕹 <b>Username</b>: @" + ctx.update.my_chat_member.chat.username
-    //     + "\n🆔 <b>Id</b>: " + ctx.update.my_chat_member.chat.id
-    //     + "\n <b>Status</b>: " + ctx.update.my_chat_member.new_chat_member.status
+    let message = `${msg_status == 'success' ? '✅ ' : '⚠️ '} <b>NOTEFICATION</b> \n\n`
+        + "🕹  <b>Action type</b>: " + ctx.update.my_chat_member.chat.type
+        + "\n📑 <b>Name</b>: " + `<a href='https://t.me/${ctx.update.my_chat_member.chat.username}' >${ctx.update.my_chat_member.chat.title}</a>`
+        + "\n🕹 <b>Username</b>: @" + ctx.update.my_chat_member.chat.username
+        + "\n🆔 <b>Id</b>: " + ctx.update.my_chat_member.chat.id
+        + "\n <b>Status</b>: " + ctx.update.my_chat_member.new_chat_member.status
 
-    //     + "\n\n<b>Connective user</b> "
-    //     + "\n👨‍💼 <b>Firstname</b>: " + ctx.update.my_chat_member.from.first_name
-    //     + "\n🪪 <b>Id</b>: " + ctx.update.my_chat_member.from.id
-    //     + "\n🕹 <b>Username</b>: @" + ctx.update.my_chat_member.from.username
-    //     + "\n\n💬 <b>Message</b>: " + `<i>${msg}</i>`;
+        + "\n\n<b>Connective user</b> "
+        + "\n👨‍💼 <b>Firstname</b>: " + ctx.update.my_chat_member.from.first_name
+        + "\n🪪 <b>Id</b>: " + ctx.update.my_chat_member.from.id
+        + "\n🕹 <b>Username</b>: @" + ctx.update.my_chat_member.from.username
+        + "\n\n💬 <b>Message</b>: " + `<i>${msg}</i>`;
 
-    // await bot.api.sendMessage(HISTORY_BOT_CHAT_ID, message, {
-    //     parse_mode: "HTML"
-    // })
+    await bot.api.sendMessage(HISTORY_BOT_CHAT_ID, message, {
+        parse_mode: "HTML"
+    })
 }
 
 
@@ -135,8 +136,6 @@ const history_msg_template = async (ctx, msg_status, msg) => {
 
 
 bot.on("my_chat_member", async (ctx) => {
-
-
     let type = ctx.update.my_chat_member.chat.type;
     let status = ctx.update.my_chat_member.new_chat_member.status;
 
@@ -188,8 +187,6 @@ bot.on("my_chat_member", async (ctx) => {
             history_msg_template(ctx, 'faild', "The bot has been removed from the group admin or the required permissions have not been granted")
         }
     } else if (type == 'private') {
-        console.log(status);
-
         let user_id = ctx.update.my_chat_member.chat.id;
         let first_name = ctx.update.my_chat_member.chat.first_name;
         let username = ctx.update.my_chat_member.chat.username;
@@ -199,10 +196,7 @@ bot.on("my_chat_member", async (ctx) => {
             first_name,
             username,
         }
-
         if (status == "member") {
-            data.active_user = true;
-            registerUser(data, ctx)
         } else {
             data.active_user = false;
             removeUser(data, ctx)
@@ -219,7 +213,8 @@ bot.on("my_chat_member", async (ctx) => {
 
 
 const pm = bot.chatType("private");
-const superGroupChat = bot.chatType("supergroup")
+const superGroupChat = bot.chatType("supergroup");
+const groupChat = bot.chatType("group");
 
 
 
@@ -231,7 +226,24 @@ const main_menu = new Keyboard()
 
 pm.command("start", (ctx) => {
     try {
-        ctx.reply("Salom Bro. Kanalga a'zo bo'l bo'tga xush kelibsiz!", {
+        let user_id = ctx.from.id;
+        let first_name = ctx.from.first_name;
+        let username = ctx.from?.username;
+        let data = {
+            user_id,
+            first_name,
+            username,
+        }
+        data.active_user = true;
+            registerUser(data, ctx)
+
+        ctx.reply(`👮‍♂️ Salom <b>${ctx.from.first_name}</b>. Men guruhingizdagi a'zolarni kanalga a'zo bo'lmaguncha yozdirmayman!
+        \n↗️ <i>Mendan foydalanish uchun siz meni guruhingizga <b>adminstator</b> qilishingiz kerak. Gruppaga ulamoqchi bo'lgan kanalizga ham meni <b>adminstator</b> qilishingiz kerak 😁</i>
+        \n☝️ <i>Guruhga ulangan kanalni uzish uchun kanaldan botni <b>adminstator</b> huquqini olib tashlash kerak yoki bot orqali kanalni guruhdan uzish kerak</i>
+        \n☝️ <i>Guruhdan botni uzish uchun botni <b>adminstator</b> huquqini olib tashlash kerak</i> 
+        \n☝️ <i>Guruhlaringizni ko'rish uchun <b>👥 Mening guruhlarim</b> tugmasidan foydalaning  </i> 
+        \n☝️ <i>Barcha ulangan kanallarni ko'rish uchun <b>📊 Kanallar</b> tugmasidan foydalaning  </i>  `, {
+            parse_mode:"HTML",
             reply_markup: main_menu
         })
 
@@ -263,10 +275,10 @@ pm.use(group_channels_menu);
 
 
 
+
 const add_channel_btn_menu = new Menu("add_channel_btn_menu")
     .text("🔁 Ulangan kanallar", async (ctx) => {
         ctx.answerCallbackQuery();
-        // ctx.deleteMessage();
         let selected_group = ctx.session.session_db.selected_group;
         if (selected_group) {
             let group_id = selected_group.group_id;
@@ -277,8 +289,10 @@ const add_channel_btn_menu = new Menu("add_channel_btn_menu")
             }))
 
             if (channel_list.length > 0) {
+                ctx.deleteMessage();
                 ctx.session.session_db.group_channel_list = channel_list;
-                ctx.reply("Kanallar", {
+                ctx.reply(`👮‍♂️ <b>Gruppaga ulangan kanallar ro'yhati</b>`, {
+                    parse_mode:"HTML",
                     reply_markup: group_channels_menu
                 })
 
@@ -317,8 +331,9 @@ my_group_menu.dynamic(async (ctx, range) => {
 
                 ctx.deleteMessage()
                 ctx.reply("<b>Gruppa nomi</b>: " + item.group_name +
-                    "\n<b>Gruppa username:</b>  @" + item.group_username +
-                    "\n\nGruppaga kanal ulash uchun <b>➕ Kanal ulash</b> tugmasini bosing.", {
+                    `\n <b>Gruppa username:</b> ${item.group_username? '@'+item.group_username : 'Yo\'q'}`   +
+                    "\n\n <i>Gruppaga ulangan kanallarni ko'rish uchun <b>🔁 Ulangan kanallar</b> tugmasini bosing.</i>"+
+                    "\n\n <i>Gruppaga kanal ulash uchun <b>➕ Kanal ulash</b> tugmasini bosing.</i>", {
                     parse_mode: "HTML",
                     reply_markup: add_channel_btn_menu,
                 })
@@ -342,8 +357,8 @@ pm.hears("👥 Mening guruhlarim", async (ctx) => {
                 reply_markup: my_group_menu
             })
         } else {
-            ctx.reply("⚠️ Sizda hozirda gruppalar yo'q \n\n ", {
-                parse_mode: "HTML",
+            ctx.reply("👮‍♂️ <b>Sizning gruppalaringiz</b> \n\n ⚠️ Eslatma: <i>Sizda bot adminstator qilib tayinlangan guruhlar yo'q</i>", {
+                parse_mode:"HTML"
             })
         }
     } catch (error) {
@@ -355,12 +370,43 @@ pm.hears("👥 Mening guruhlarim", async (ctx) => {
 })
 
 
+
+
+
+
+
+const my_channels_menu = new Menu("my_channels_menu");
+my_channels_menu.dynamic(async (ctx, range) => {
+    let menu_list = await ctx.session.session_db.my_channels_list
+    menu_list.forEach((item) => {
+        range
+            .text(item.channel_name +' 🟢', async (ctx) => {
+                await ctx.answerCallbackQuery();
+                ctx.deleteMessage();
+                ctx.reply("👮‍♂️ Raxmat!")
+            })
+            .row();
+    });
+});
+
+pm.use(my_channels_menu)
 pm.hears("📊 Kanallar", async (ctx) => {
     try {
         let user_id = ctx.from.id;
         let channel_data = await userRelationChannels(user_id);
-        console.log(channel_data);
-
+        let channel_list = channel_data.map((item)=> ({channel_name:item.channel.channel_name, channel_id:item.channel.channel_id}));
+       
+        if(channel_list.length>0){
+            ctx.session.session_db.my_channels_list = channel_list;
+            await ctx.reply("👮‍♂️ <b>Kanallar ro'yhati</b> \n\n 📝 Eslatma: <i>Bu kanallar sizning gruppalaringizdan biriga ulangan!</i>", {
+                parse_mode:"HTML",
+                reply_markup:my_channels_menu
+            })
+        }else{
+            ctx.reply("👮‍♂️ <b>Kanallar ro'yhati</b> \n\n ⚠️ Eslatma: <i>Sizda gruppaga ulangan kannalar yo'q</i>", {
+                parse_mode:"HTML"
+            })
+        }
     } catch (error) {
         customLogger.log({
             level: 'error',
@@ -405,12 +451,12 @@ channel_btn_list_menu.dynamic(async (ctx, range) => {
 superGroupChat.use(channel_btn_list_menu);
 
 superGroupChat.on("message", async (ctx) => {
-
     let permission_list = ['member', 'adminstator', 'creator',]
     let group_id = ctx.message.chat.id;
     let user_id = ctx.from.id;
 
     let group_list = await getRelationList(group_id);
+    console.log(group_id);
     if (group_list.length > 0) {
         let btn_list = [];
         for (const item of group_list) {
@@ -437,6 +483,43 @@ superGroupChat.on("message", async (ctx) => {
 
 
 })
+
+groupChat.use(channel_btn_list_menu)
+groupChat.on("message", async (ctx) => {
+    console.log(ctx);
+    let permission_list = ['member', 'adminstator', 'creator',]
+    let group_id = ctx.message.chat.id;
+    let user_id = ctx.from.id;
+
+    let group_list = await getRelationList(group_id);
+    console.log(group_id);
+    if (group_list.length > 0) {
+        let btn_list = [];
+        for (const item of group_list) {
+            let chatMembers = await ctx.chatMembers.getChatMember(item.channel.channel_id, user_id);
+            if (!permission_list.includes(chatMembers.status)) {
+                btn_list.push({
+                    channel_name: item.channel.channel_name,
+                    channel_username: item.channel.channel_username,
+                    channel_id: item.channel.channel_id
+                })
+            }
+        };
+        if (!btn_list.length == 0) {
+            await ctx.deleteMessage();
+            ctx.session.session_db.channel_list = btn_list;
+            await ctx.reply(`👮‍♂️ Salom  <a href="tg://user?id=${ctx.from.id}">${ctx.from.first_name}</a> . Guruhga yozish uchun quyidagi kanallarga a'zo bo'lishingiz shart. \n 👇👇👇👇👇👇👇👇👇 `, {
+                reply_markup: channel_btn_list_menu,
+                parse_mode: "HTML"
+            })
+        }
+
+    }
+
+
+
+})
+
 
 
 
