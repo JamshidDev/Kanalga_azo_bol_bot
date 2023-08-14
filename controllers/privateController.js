@@ -86,6 +86,35 @@ const getRelationList= async (group_id)=>{
     }
 }
 
+const groupRelationChannel = async (group_id)=>{
+    try{
+        let channels = await Relation.find({group_id, active_relation:true }).populate('group').populate('channel')
+        return channels
+
+    }catch(error){
+        customLogger.log({
+            level: 'error',
+            message: error
+        });
+        return []
+    }
+}
+
+const userRelationChannels = async (user_id)=>{
+    try{
+        let channels = await Relation.find({creator:user_id, active_relation:true }).populate('channel');
+        return channels
+
+    }catch(error){
+        customLogger.log({
+            level: 'error',
+            message: error
+        });
+        return []
+    }
+    
+}
+
 
 
 
@@ -95,5 +124,7 @@ module.exports = {
     searchChannel,
     relationGroupChannel,
     removeRelationGroupChannel,
-    getRelationList
+    getRelationList,
+    groupRelationChannel,
+    userRelationChannels
 }
